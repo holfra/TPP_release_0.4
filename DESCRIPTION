@@ -1,0 +1,12 @@
+Package: TPP
+Type: Package
+Title: Analyze thermal proteome profiling (TPP) experiments
+Version: 0.99.0
+Author: Dorothee Childs, Holger Franken, Mikhail Savitski and Wolfgang Huber
+Maintainer: Dorothee Childs <dorothee.childs@embl.de>
+Depends: Biobase, ggplot2, gridExtra, RColorBrewer, reshape2, nls2, foreach, VGAM, doParallel, openxlsx, plyr
+Imports: 
+Suggests: BiocStyle, knitr, testthat
+Description: Description
+License: License
+VignetteBuilder: knitr

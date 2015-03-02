@@ -1,0 +1,105 @@
+<<<<<<< .mine
+#' @title Invoke melting curve fitting in parallel or serial manner
+#' @description Wrapper function to start melting curve fitting with or without
+#' parallelization
+#' @details Parallelization is performed with function \code{\link{foreach}} of
+#' the \code{\link{doParallel}} package.
+#' @importFrom foreach %dopar% %do%
+fitProteinsTryPar <- function(idVec, x, y, pars, maxN, nameVec, resultPath, relPaths, theme, conds, reps, nCores=1, doPlot){
+  cat("Fitting melting curves to", length(idVec), "proteins.\n")
+  strCallFit <- "fitProtein(xMat=x, yDF=subset(y, protID==p), startPars=pars,
+                   maxAttempts=maxN, expNames=nameVec, resultPath, plotPathRel=relPaths[[p]],
+                   protID=p, plotTheme=theme, grConds=conds, grReps=reps, doPlot=doPlot)"
+  
+  expr=parse(text=strCallFit) # testing (Holger)
+  
+  if (nCores>1){
+    dfCurvePars <- tryCatch({
+      maxCores <- detectCores()
+      if (nCores > maxCores){
+        warning("Selected number of cores (", nCores, ") exceeds those available on your device (", maxCores, ")! Starting parallelization with the ", maxCores, " available cores only.")
+        nCores <- maxCores
+      }
+      registerDoParallel(cores=nCores)
+      t1 <- Sys.time()
+      dfCurvePars <- foreach(p=idVec, .combine=rbind, .inorder=FALSE, .verbose=FALSE,
+                             .export = c("x", "y", "pars", "maxN", "nameVec", "relPaths", "theme", "conds", "reps", "resultPath"),
+                             .packages=c("ggplot2", "reshape2", "gridExtra")) %dopar%
+        #         eval(expr=parse(text=strCallFit)) # testing (Holger)
+        eval(expr)    # testing (Holger)
+      gc(verbose=FALSE)        
+      cat("Melting curves fitted sucessfully!\n")
+      cat("Runtime with parallelization: "); print(Sys.time()-t1)
+      out <- arrange(dfCurvePars, protID) # Define return value of tryCatch function
+    }, error = function(cond){
+      message("An error occurred during parallel curve fitting.")
+      message("Trying again without parallelization.")
+      message(cond)
+      nCores <- 1 
+      dfCurvePars <- NULL
+    })
+  }
+  if (nCores==1) {
+    t1 <- Sys.time()
+    dfCurvePars <- foreach(p=idVec, .combine=rbind, .inorder=TRUE) %do%
+      #       tryCatch({eval(expr=parse(text=strCallFit))}, error=function(cond){ # testing (Holger)
+      tryCatch({eval(expr)}, error=function(cond){ # testing (Holger)
+        message("An error occurred while fitting melting curves for protein ", p, ".\n")
+        message(cond)
+      })
+    cat("\nMelting curves fitted sucessfully!\n")
+    cat("Runtime without parallelization: "); print(Sys.time()-t1)
+  }
+  return(dfCurvePars)
+  
+=======
+#' @title Invoke melting curve fitting in parallel or serial manner
+#' @description Wrapper function to start melting curve fitting with or without
+#' parallelization
+#' @details Parallelization is performed with function \code{\link{foreach}} of
+#' the \code{\link{doParallel}} package.
+#' @importFrom foreach %dopar% %do%
+fitProteinsTryPar <- function(idVec, x, y, pars, maxN, nameVec, resultPath, relPaths, theme, conds, reps, nCores=1, doPlot){
+  cat("Fitting melting curves to", length(idVec), "proteins.\n")
+  strCallFit <- "fitProtein(xMat=x, yDF=subset(y, protID==p), startPars=pars,
+                   maxAttempts=maxN, expNames=nameVec, resultPath, plotPathRel=relPaths[[p]],
+                   protID=p, plotTheme=theme, grConds=conds, grReps=reps, doPlot=doPlot)"
+  if (nCores>1){
+    dfCurvePars <- tryCatch({
+      maxCores <- detectCores()
+      if (nCores > maxCores){
+        warning("Selected number of cores (", nCores, ") exceeds those available on your device (", maxCores, ")! Starting parallelization with the ", maxCores, " available cores only.")
+        nCores <- maxCores
+      }
+      registerDoParallel(cores=nCores)
+      t1 <- Sys.time()
+      dfCurvePars <- foreach(p=idVec, .combine=rbind, .inorder=TRUE, .verbose=FALSE,
+                             .export = c("x", "y", "pars", "maxN", "nameVec", "relPaths", "theme", "conds", "reps", "resultPath"),
+                             .packages=c("ggplot2", "reshape2", "gridExtra")) %dopar%
+        eval(expr=parse(text=strCallFit))
+      gc(verbose=FALSE)        
+      cat("Melting curves fitted sucessfully!\n")
+      cat("Runtime with parallelization: "); print(Sys.time()-t1)
+      out <- dfCurvePars  # Define return value of tryCatch function
+    }, error = function(cond){
+      message("An error occurred during parallel curve fitting.")
+      message("Trying again without parallelization.")
+      message(cond)
+      nCores <- 1 
+      dfCurvePars <- NULL
+    })
+  }
+  if (nCores==1) {
+    t1 <- Sys.time()
+    dfCurvePars <- foreach(p=idVec, .combine=rbind) %do%
+      tryCatch({eval(expr=parse(text=strCallFit))}, error=function(cond){
+        message("An error occurred while fitting melting curves for protein ", p, ".\n")
+        message(cond)
+      })
+    cat("\nMelting curves fitted sucessfully!\n")
+    cat("Runtime without parallelization: "); print(Sys.time()-t1)
+  }
+  return(dfCurvePars)
+  
+>>>>>>> .r24142
+}
